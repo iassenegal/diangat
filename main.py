@@ -1,13 +1,17 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
 import streamlit as st
-
+import numpy as np
+from pandas import DataFrame
+from keybert import KeyBERT
 # For Flair (Keybert)
+from flair.embeddings import TransformerDocumentEmbeddings
+import seaborn as sns
 # For download buttons
 from functionforDownloadButtons import download_button
-from keybert import KeyBERT
-from pandas import DataFrame
+import os
+import matplotlib.pyplot as plt
+import json
 from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="BERT Keyword Extractor",
@@ -16,14 +20,14 @@ st.set_page_config(
 
 
 def _max_width_():
-    max_width_str = "max-width: 1400px;"
+    max_width_str = f"max-width: 1400px;"
     st.markdown(
         f"""
     <style>
     .reportview-container .main .block-container{{
         {max_width_str}
     }}
-    </style>
+    </style>    
     """,
         unsafe_allow_html=True,
     )
@@ -39,9 +43,11 @@ with c30:
     st.header("")
 
 
+
 with st.expander("ℹ️ - About this app", expanded=True):
+
     st.write(
-        """
+        """     
 -   The *BERT Keyword Extractor* app is an easy-to-use interface built in Streamlit for the amazing [KeyBERT](https://github.com/MaartenGr/KeyBERT) library from Maarten Grootendorst!
 -   It uses a minimal keyword extraction technique that leverages multiple NLP embeddings and relies on [Transformers] (https://huggingface.co/transformers/) 🤗 to create keywords/keyphrases that are most similar to a document.
 	    """
@@ -52,6 +58,8 @@ with st.expander("ℹ️ - About this app", expanded=True):
 st.markdown("")
 st.markdown("## **📌 Paste document **")
 with st.form(key="my_form"):
+
+
     ce, c1, ce, c2, c3 = st.columns([0.07, 1, 0.07, 5, 0.07])
     with c1:
         ModelType = st.radio(
@@ -65,12 +73,11 @@ with st.form(key="my_form"):
 
             @st.cache(allow_output_mutation=True)
             def load_model():
-                return KeyBERT(model="roberta")
+                return KeyBERT(model=roberta)
 
             kw_model = load_model()
 
         else:
-
             @st.cache(allow_output_mutation=True)
             def load_model():
                 return KeyBERT("distilbert-base-nli-mean-tokens")
@@ -126,7 +133,7 @@ To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher de
             max_value=1.0,
             step=0.1,
             help="""The higher the setting, the more diverse the keywords.
-
+            
 Note that the *Keyword diversity* slider only works if the *MMR* checkbox is ticked.
 
 """,
@@ -140,7 +147,6 @@ Note that the *Keyword diversity* slider only works if the *MMR* checkbox is tic
 
         MAX_WORDS = 500
         import re
-
         res = len(re.findall(r"\w+", doc))
         if res > MAX_WORDS:
             st.warning(
@@ -201,19 +207,19 @@ df = (
     .reset_index(drop=True)
 )
 ##############
-# Create a word cloud for the top 10 most relevant keywords
-top_keywords = df.head(10)["Keyword/Keyphrase"].tolist()
-wordcloud_text = " ".join(top_keywords)
 
-wordcloud = WordCloud(width=800, height=400, background_color="white").generate(wordcloud_text)
+# Assuming 'df' is your DataFrame containing keywords/keyphrases
+top_keywords = df.head(10)["Keyword/Keyphrase"].tolist()
+wordcloud_text = ' '.join(top_keywords)
+
+wordcloud = WordCloud(width=600, height=200, background_color='white').generate(wordcloud_text)
 
 # Display the word cloud
 st.markdown("## **🌟 Word Cloud of Top 10 Relevant Keywords**")
-plt.figure(figsize=(10, 5))
-plt.imshow(wordcloud, interpolation="bilinear")
-plt.axis("off")
-st.pyplot()
-
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.imshow(wordcloud, interpolation='bilinear')
+ax.axis('off')
+st.pyplot(fig)
 #################
 df.index += 1
 
