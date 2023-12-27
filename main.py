@@ -1,274 +1,263 @@
+import justext
 import matplotlib.pyplot as plt
-import seaborn as sns
+import openai
+import pandas as pd
+import requests
 import streamlit as st
-from keybert import KeyBERT
-from pandas import DataFrame
+import yake
+from PyPDF2 import PdfReader
+from pytube import YouTube
 from wordcloud import WordCloud
-
-# For Flair (Keybert)
-# For download buttons
-from functionforDownloadButtons import download_button
+from youtube_transcript_api import YouTubeTranscriptApi
 
 
-class BERTKeywordExtractor:
-    def __init__(self):
-        st.set_page_config(
-            page_title="BERT Keyword Extractor",
-            page_icon="🎈",
+class WebApp:
+    def extract_keywords(
+        self, text, num_keywords, visualize_wordcloud=True, visualize_barchart=True
+    ):
+        kw_extractor = yake.KeywordExtractor()
+        language = "french"
+        max_ngram_size = 3
+        deduplication_threshold = 0.9
+        custom_kw_extractor = yake.KeywordExtractor(
+            lan=language,
+            n=max_ngram_size,
+            dedupLim=deduplication_threshold,
+            top=num_keywords,
+            features=None,
+        )
+        keywords = custom_kw_extractor.extract_keywords(text)
+
+        top_keywords = [keyword[0] for keyword in keywords[:num_keywords]]
+
+        df_keywords = pd.DataFrame(
+            {"Keyword": top_keywords, "Score": [keyword[1] for keyword in keywords[:num_keywords]]}
         )
 
-    @staticmethod
-    def _max_width_():
-        max_width_str = "max-width: 1400px;"
+        if visualize_wordcloud:
+            st.subheader(f"Word Cloud for Top {num_keywords} Keywords")
+            stop_words = ["d'un", "du", "un", "des"]
+            fig_wc, ax_wc = plt.subplots(figsize=(20, 20))
+            wordcloud = WordCloud(
+                stopwords=stop_words, background_color="white", width=800, height=400
+            ).generate(" ".join(top_keywords))
+            ax_wc.imshow(wordcloud, interpolation="bilinear")
+            ax_wc.axis("off")
+            st.pyplot(fig_wc)
+
+        if visualize_barchart:
+            st.subheader(f"Bar Chart for Top {num_keywords} Keywords")
+            fig_bc, ax_bc = plt.subplots(figsize=(10, 6))
+            df_keywords.plot(kind="barh", x="Keyword", y="Score", ax=ax_bc, color="skyblue", rot=0)
+            ax_bc.set_ylabel("Score")
+            ax_bc.set_title(f"Top {num_keywords} Keywords and Their Scores")
+
+        st.write(top_keywords)
+
+        words_to_count = [
+            "numérique",
+            "société",
+            "révolution",
+            "développement",
+            "Valeurs",
+            "Institutions",
+            "Fortes",
+            "Projets",
+        ]
+
+        word_counts = {word: text.lower().split().count(word.lower()) for word in words_to_count}
+
+        if visualize_barchart:
+            df_word_counts = pd.DataFrame(list(word_counts.items()), columns=["Word", "Count"])
+            st.subheader("Bar Chart for Word Occurrences")
+            fig_word_counts, ax_word_counts = plt.subplots(figsize=(10, 6))
+            df_word_counts.plot(
+                kind="barh", x="Word", y="Count", ax=ax_word_counts, colormap="viridis"
+            )
+            ax_word_counts.set_ylabel("Count")
+            ax_word_counts.set_title("Proposition phares ")
+            st.pyplot(fig_word_counts)
+
+    def download_transcript(self, video_url, num_keywords):
+        try:
+            video_id = YouTube(video_url).video_id
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["fr"])
+            transcript_text = "\n".join([entry["text"] for entry in transcript])
+            keywords = self.extract_keywords(transcript_text, num_keywords)
+            st.subheader("YouTube Transcript:")
+            st.write(transcript_text)
+            if keywords:
+                self.extract_keywords(transcript_text, num_keywords)
+        except Exception as e:
+            st.error(f"Error downloading transcript: {str(e)}")
+
+    def scrape_content_url(self, url, num_keywords):
+        try:
+            response = requests.get(url)
+            paragraphs = justext.justext(response.content, justext.get_stoplist("French"))
+            total_paragraphs = len(paragraphs)
+            scraped_content = []
+
+            with st.progress(0):
+                for i, paragraph in enumerate(paragraphs):
+                    if not paragraph.is_boilerplate:
+                        scraped_content.append(paragraph.text)
+
+                    progress = (i + 1) / total_paragraphs
+                    st.progress(progress)
+
+            content_text = " ".join(scraped_content)
+            keywords = self.extract_keywords(content_text, num_keywords)
+
+            insights = self.get_insights_from_text(content_text)
+            st.subheader("Insights from Extracted Content:")
+            st.write(insights)
+
+            return content_text, keywords
+        except Exception as e:
+            st.error(f"Error scraping content: {str(e)}")
+            return None, None
+
+    def scrape_content_pdf(self, pdf_file, num_keywords):
+        try:
+            pdf_reader = PdfReader(pdf_file)
+            total_pages = len(pdf_reader.pages)
+            extracted_text = []
+
+            with st.progress(0):
+                for i in range(total_pages):
+                    page = pdf_reader.pages[i]
+                    extracted_text.append(page.extract_text())
+
+                    progress = (i + 1) / total_pages
+                    st.progress(progress)
+
+            content_text = " ".join(extracted_text)
+            keywords = self.extract_keywords(content_text, num_keywords)
+
+            insights = self.get_insights_from_text(content_text)
+            st.subheader("Insights from Extracted Content:")
+            st.write(insights)
+
+            return content_text, keywords
+        except Exception as e:
+            st.error(f"Error extracting text from PDF: {str(e)}")
+            return None, None
+
+    def about_page(self):
+        st.markdown("<h2>A propos de cette application</h2>", unsafe_allow_html=True)
+        st.write(
+            """Cette application web est conçue pour analyser du contenu provenant de diverses sources, telles que des sites web, facebook, linkedin, des PDF et des vidéos YouTube."""
+        )
+        st.write(
+            "Utilisez la barre latérale pour choisir la source de données et définir le nombre de mots-clés à analyser."
+        )
+
+    def analysis_page(self):
+        st.markdown("<h2>Analysis Page</h2>", unsafe_allow_html=True)
+
+        num_keywords = st.number_input(
+            "Number of Keywords (up to 20):", min_value=1, max_value=200, value=20
+        )
+
+        action_button = st.button("Run Analysis")
+
+        option = st.selectbox("Choose data source:", ("URL", "PDF", "YouTube"))
+
+        if option == "URL":
+            url = st.text_input("Enter the URL to scrape:", "")
+            if action_button:
+                if url:
+                    st.info("Scraping content... Please wait.")
+                    scraped_content, keywords = self.scrape_content_url(url, num_keywords)
+
+                    if scraped_content:
+                        st.subheader("Scraped Content:")
+                        st.write(scraped_content)
+
+                        if keywords:
+                            self.extract_keywords(scraped_content, num_keywords)
+                    else:
+                        st.warning("Failed to scrape content. Check the URL and try again.")
+
+        elif option == "PDF":
+            pdf_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+            if action_button:
+                if pdf_file:
+                    st.info("Extracting text... Please wait.")
+                    extracted_text, keywords = self.scrape_content_pdf(pdf_file, num_keywords)
+
+                    if extracted_text:
+                        st.subheader("Extracted Text:")
+                        if keywords:
+                            self.extract_keywords(extracted_text, num_keywords)
+                    else:
+                        st.warning(
+                            "Failed to extract text from PDF. Check the file and try again."
+                        )
+
+        elif option == "YouTube":
+            youtube_url = st.text_input("Enter the YouTube URL:", "")
+            if action_button:
+                if youtube_url:
+                    st.info("Downloading transcript... Please wait.")
+                    self.download_transcript(youtube_url, num_keywords)
+                else:
+                    st.warning("Please enter a valid YouTube URL.")
+
+    def get_insights_from_text(self, text, max_tokens=50):
+        api_key = "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"
+        openai.api_key = api_key
+
+        max_context_tokens = 4096
+        chunks = [
+            text[i : i + max_context_tokens] for i in range(0, len(text), max_context_tokens)
+        ]
+
+        insights = []
+        total_chunks = len(chunks)
+        progress_bar = st.progress(0)
+
+        for i, chunk in enumerate(chunks):
+            prompt = f"Extract 5 main topics from the following text:\n{chunk}\n\nInsights:"
+            response = openai.completions.create(
+                model="text-davinci-003",
+                prompt=prompt,
+                max_tokens=max_tokens,
+                stop=None,
+                temperature=0.5,
+            )
+            insights.append(response.choices[0].text.strip())
+
+            progress_bar.progress((i + 1) / total_chunks)
+
+        return "\n".join(insights)
+
+    def run(self):
         st.markdown(
-            f"""
-        <style>
-        .reportview-container .main .block-container{{
-            {max_width_str}
-        }}
-        </style>
-        """,
+            """
+            <style>
+                """
+            + open("style.css").read()
+            + """
+            </style>
+            """,
             unsafe_allow_html=True,
         )
 
-    def run(self):
-        self._max_width_()
-
-        c30, c31, c32 = st.columns([2.5, 1, 3])
-
-        with c30:
-            # st.image("logo.png", width=400)
-            st.title("🔑 BERT Keyword Extractor")
-            st.header("")
-
-        with st.expander("ℹ️ - About this app", expanded=True):
-            st.write(
-                """
-        -   The *BERT Keyword Extractor* app is an easy-to-use interface built in Streamlit for the amazing [KeyBERT](https://github.com/MaartenGr/KeyBERT) library from Maarten Grootendorst!
-        -   It uses a minimal keyword extraction technique that leverages multiple NLP embeddings and relies on [Transformers] (https://huggingface.co/transformers/) 🤗 to create keywords/keyphrases that are most similar to a document.
-                """
-            )
-
-            st.markdown("")
-
-        st.markdown("")
-        st.markdown("## **📌 Paste document **")
-        with st.form(key="my_form"):
-            ce, c1, ce, c2, c3 = st.columns([0.07, 1, 0.07, 5, 0.07])
-            with c1:
-                self.model_options()
-
-                self.keywords_extraction_options()
-
-            with c2:
-                self.input_document()
-
-                self.check_data_button()
-
-            if self.use_MMR:
-                self.mmr = True
-            else:
-                self.mmr = False
-
-            if self.StopWordsCheckbox:
-                self.StopWords = "english"
-            else:
-                self.StopWords = None
-
-            if not self.submit_button:
-                st.stop()
-
-            if self.min_Ngrams > self.max_Ngrams:
-                st.warning("min_Ngrams can't be greater than max_Ngrams")
-                st.stop()
-
-            keywords = self.kw_model.extract_keywords(
-                self.doc,
-                keyphrase_ngram_range=(self.min_Ngrams, self.max_Ngrams),
-                use_mmr=self.mmr,
-                stop_words=self.StopWords,
-                top_n=self.top_N,
-                diversity=self.Diversity,
-            )
-
-            self.download_results(keywords)
-
-            self.display_results(keywords)
-
-    def model_options(self):
-        ModelType = st.radio(
-            "Choose your model",
-            ["DistilBERT (Default)", "Flair"],
-            help="At present, you can choose between 2 models (Flair or DistilBERT) to embed your text. More to come!",
+        st.markdown(
+            "<h1 style='font-size:1.5em;'>Institut des Algorithmes du Sénégal - Diangat Web App</h1>",
+            unsafe_allow_html=True,
         )
 
-        if ModelType == "Default (DistilBERT)":
+        page_option = st.sidebar.radio("Choose page:", ("A propos", "Analyse"))
 
-            @st.cache(allow_output_mutation=True)
-            def load_model():
-                return KeyBERT(model="roberta")
-
-            self.kw_model = load_model()
-
-        else:
-
-            @st.cache(allow_output_mutation=True)
-            def load_model():
-                return KeyBERT("distilbert-base-nli-mean-tokens")
-
-            self.kw_model = load_model()
-
-    def keywords_extraction_options(self):
-        self.top_N = st.slider(
-            "# of results",
-            min_value=1,
-            max_value=30,
-            value=10,
-            help="You can choose the number of keywords/keyphrases to display. Between 1 and 30, default number is 10.",
-        )
-
-        self.min_Ngrams = st.number_input(
-            "Minimum Ngram",
-            min_value=1,
-            max_value=4,
-            help="""The minimum value for the ngram range.
-
-    *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
-
-    To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.""",
-        )
-
-        self.max_Ngrams = st.number_input(
-            "Maximum Ngram",
-            value=2,
-            min_value=1,
-            max_value=4,
-            help="""The maximum value for the keyphrase_ngram_range.
-
-    *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
-
-    To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.""",
-        )
-
-        self.StopWordsCheckbox = st.checkbox(
-            "Remove stop words",
-            help="Tick this box to remove stop words from the document (currently English only)",
-        )
-
-        self.use_MMR = st.checkbox(
-            "Use MMR",
-            value=True,
-            help="You can use Maximal Margin Relevance (MMR) to diversify the results. It creates keywords/keyphrases based on cosine similarity. Try high/low 'Diversity' settings below for interesting variations.",
-        )
-
-        self.Diversity = st.slider(
-            "Keyword diversity (MMR only)",
-            value=0.5,
-            min_value=0.0,
-            max_value=1.0,
-            step=0.1,
-            help="""The higher the setting, the more diverse the keywords.
-
-    Note that the *Keyword diversity* slider only works if the *MMR* checkbox is ticked.
-
-    """,
-        )
-
-    def input_document(self):
-        self.doc = st.text_area(
-            "Paste your text below (max 500 words)",
-            height=510,
-        )
-
-        MAX_WORDS = 500
-        import re
-
-        res = len(re.findall(r"\w+", self.doc))
-        if res > MAX_WORDS:
-            st.warning(
-                "⚠️ Your text contains "
-                + str(res)
-                + " words."
-                + " Only the first 500 words will be reviewed. Stay tuned as increased allowance is coming! 😊"
-            )
-
-            self.doc = self.doc[:MAX_WORDS]
-
-        self.submit_button = st.form_submit_button(label="✨ Get me the data!")
-
-    def check_data_button(self):
-        if self.use_MMR:
-            self.mmr = True
-        else:
-            self.mmr = False
-
-        if self.StopWordsCheckbox:
-            self.StopWords = "english"
-        else:
-            self.StopWords = None
-
-    def download_results(self, keywords):
-        st.markdown("## **🎈 Check & download results **")
-
-        st.header("")
-
-        cs, c1, c2, c3, cLast = st.columns([2, 1.5, 1.5, 1.5, 2])
-
-        with c1:
-            CSVButton2 = download_button(keywords, "Data.csv", "📥 Download (.csv)")
-        with c2:
-            CSVButton2 = download_button(keywords, "Data.txt", "📥 Download (.txt)")
-        with c3:
-            CSVButton2 = download_button(keywords, "Data.json", "📥 Download (.json)")
-
-        st.header("")
-
-    def display_results(self, keywords):
-        df = (
-            DataFrame(keywords, columns=["Keyword/Keyphrase", "Relevancy"])
-            .sort_values(by="Relevancy", ascending=False)
-            .reset_index(drop=True)
-        )
-
-        df.index += 1
-
-        # Create a word cloud for the top 10 most relevant keywords
-        top_keywords = df.head(10)["Keyword/Keyphrase"].tolist()
-        wordcloud_text = " ".join(top_keywords)
-
-        wordcloud = WordCloud(width=800, height=400, background_color="white").generate(
-            wordcloud_text
-        )
-
-        # Display the word cloud
-        st.markdown("## **🌟 Word Cloud of Top 10 Relevant Keywords**")
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(wordcloud, interpolation="bilinear")
-        ax.axis("off")
-        st.pyplot(fig)
-
-        # Add styling
-        cmGreen = sns.light_palette("green", as_cmap=True)
-        cmRed = sns.light_palette("red", as_cmap=True)
-        df = df.style.background_gradient(
-            cmap=cmGreen,
-            subset=[
-                "Relevancy",
-            ],
-        )
-
-        c1, c2, c3 = st.columns([1, 3, 1])
-
-        format_dictionary = {
-            "Relevancy": "{:.1%}",
-        }
-
-        df = df.format(format_dictionary)
-
-        with c2:
-            st.table(df)
+        if page_option == "A propos":
+            self.about_page()
+        elif page_option == "Analyse":
+            self.analysis_page()
 
 
 if __name__ == "__main__":
-    bert_extractor = BERTKeywordExtractor()
-    bert_extractor.run()
+    web_app = WebApp()
+    web_app.run()
