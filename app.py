@@ -115,9 +115,7 @@ selected_subjects = [
     "rural",
 ]
 
-selected_subjects = st.sidebar.multiselect(
-    "Selectionner un ou plusieurs sujets", selected_subjects
-)
+selected_subjects = st.multiselect("Selectionner un ou plusieurs sujets", selected_subjects)
 
 if option == "Article web : URL":
     url = st.text_input("Enter URL:")
