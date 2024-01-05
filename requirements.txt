@@ -7,3 +7,5 @@ flair
 click<8
 wordcloud
 justext
+plotly
+PyPDF2
