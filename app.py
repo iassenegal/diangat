@@ -12,6 +12,10 @@ from PyPDF2 import PdfReader
 nltk.download("punkt")
 nltk.download("wordnet")
 
+st.set_page_config(
+    page_title="Jàngat - App",
+    page_icon="https://thumb.ac-illust.com/41/4137d1a06f24fba4ad746d7672551894_t.jpeg",
+)
 
 # Function to scrape content from URL
 def scrape_content_url(url):
