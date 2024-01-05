@@ -17,6 +17,7 @@ st.set_page_config(
     page_icon="https://thumb.ac-illust.com/41/4137d1a06f24fba4ad746d7672551894_t.jpeg",
 )
 
+
 # Function to scrape content from URL
 def scrape_content_url(url):
     try:
@@ -118,7 +119,6 @@ selected_subjects = [
     "développement social",
     "rural",
 ]
-
 selected_subjects = st.multiselect("Selectionner un ou plusieurs sujets", selected_subjects)
 
 if option == "Article web : URL":
@@ -221,19 +221,6 @@ elif option == "Document PDF":
                             )
 
                             st.plotly_chart(fig)
-
-                            st.markdown(
-                                f"Propositions phares par thématique dans : {pdf_files_names[idx]}:"
-                            )
-                            for subject, sentences in result_occurrences.items():
-                                st.markdown(f"**Thématique: {subject}**")
-                                if sentences:
-                                    sentences_list = "<br>".join(
-                                        f"'{sentence}'" for sentence in list(sentences)[:2]
-                                    )
-                                    st.markdown(sentences_list, unsafe_allow_html=True)
-                                else:
-                                    st.write("Aucune proposition trouvée pour cette thématique.")
 
                 except ZeroDivisionError:
                     st.write("Division by zero occurred during proportion calculation.")
