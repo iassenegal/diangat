@@ -23,17 +23,13 @@ def scrape_content_url(url):
     try:
         response = requests.get(url)
         paragraphs = justext.justext(response.content, justext.get_stoplist("French"))
-        scraped_content = []
-
-        for i, paragraph in enumerate(paragraphs):
-            if not paragraph.is_boilerplate:
-                scraped_content.append(paragraph.text)
-
+        scraped_content = [
+            paragraph.text for paragraph in paragraphs if not paragraph.is_boilerplate
+        ]
         content_text = " ".join(scraped_content)
-
         return content_text
     except Exception as e:
-        st.write(f"Error scraping content: {str(e)}")
+        st.error(f"Error scraping content: {str(e)}")
         return None
 
 
@@ -42,26 +38,19 @@ def scrape_content_pdf(pdf_file):
     try:
         pdf_reader = PdfReader(pdf_file)
         total_pages = len(pdf_reader.pages)
-        extracted_text = []
-
-        for i in range(total_pages):
-            page = pdf_reader.pages[i]
-            extracted_text.append(page.extract_text())
-
+        extracted_text = [pdf_reader.pages[i].extract_text() for i in range(total_pages)]
         content_text = " ".join(extracted_text)
-        st.write(
-            f"Nombre de pages dans le document '{pdf_file.name}': {total_pages}"
-        )  # Print number of pages
+        st.info(
+            f"Nombre de pages dans le document '{pdf_file.name.replace('.pdf', '')}': {total_pages}"
+        )
         return content_text
     except Exception as e:
-        st.write(f"Error extracting text from PDF: {str(e)}")
+        st.error(f"Error extracting text from PDF: {str(e)}")
         return None
 
 
 # Function to find subject occurrences in text
 def find_subject_occurrences(text, selected_subjects):
-    # ... (your existing code for remove_apostrophes, correct_text, lemmatize_text)
-
     subjects = selected_subjects
     occurrences = {subject: set() for subject in subjects}
     subject_count = {subject: 0 for subject in subjects}
@@ -87,11 +76,10 @@ def find_subject_occurrences(text, selected_subjects):
 
 
 # Streamlit app
+st.title("Comparateur de programmes")
 st.write("Analyse thématique des propositions des candidats aux élections présidentielles")
 
-option = st.sidebar.selectbox(
-    "Choisir une source de données:", ("Article web : URL", "Document PDF")
-)
+option = st.sidebar.radio("Choisir une source de données:", ("Article web : URL", "Document PDF"))
 
 selected_subjects = [
     "plan politique",
@@ -119,7 +107,7 @@ selected_subjects = [
     "développement social",
     "rural",
 ]
-selected_subjects = st.multiselect("Selectionner un ou plusieurs sujets", selected_subjects)
+selected_subjects = st.multiselect("Selectionner une ou plusieurs thématiques", selected_subjects)
 
 if option == "Article web : URL":
     url = st.text_input("Enter URL:")
@@ -130,27 +118,27 @@ if option == "Article web : URL":
                 result_occurrences, result_count_proportions = find_subject_occurrences(
                     sample_text, selected_subjects
                 )
-                # st.write(result_occurrences)
+
+                # Display occurrences
                 for subject, sentences in result_occurrences.items():
-                    st.write(f"Occurrences of '{subject}':")
+                    st.subheader(f"Occurrences de '{subject}':")
                     for sentence in sentences:
                         st.write(f"'{sentence}'")
 
+                # Display proportions
                 for subject, proportion in result_count_proportions.items():
-                    st.write(f"Proportion of times '{subject}' appears: {proportion}")
+                    st.write(f"Proportion de '{subject}': {proportion:.2%}")
 
-                # Calculate proportions for plotting
+                # Plotting
                 proportions_df = pd.DataFrame(
                     result_count_proportions.items(), columns=["Thématiques", "Proportions"]
                 )
-
-                # Plotting using Plotly Express
                 fig = px.bar(
                     proportions_df,
                     x="Proportions",
                     y="Thématiques",
                     orientation="h",
-                    text=proportions_df["Proportions"].apply(lambda x: f"{x * 100:.2f}%"),
+                    text=proportions_df["Proportions"].apply(lambda x: f"{x:.2%}"),
                     labels={"Proportions": "Proportions (%)", "Thématiques": "Thématiques"},
                     title="Proportion de thématiques liées au développement dans le programme du candidat",
                     color=proportions_df["Proportions"],
@@ -158,29 +146,22 @@ if option == "Article web : URL":
                     width=800,
                     height=600,
                 )
-
                 st.plotly_chart(fig)
 
             except ZeroDivisionError:
-                st.write("Division by zero occurred during proportion calculation.")
+                st.error("Une division par zéro s'est produite lors du calcul de la proportion.")
         else:
-            st.write("Failed to retrieve content from the URL.")
+            st.warning("Échec de récupération du contenu depuis l'URL.")
 
 elif option == "Document PDF":
-    pdf_files = st.file_uploader("Upload two PDF files", type=["pdf"], accept_multiple_files=True)
+    pdf_files = st.file_uploader(
+        "Charger deux fichers PDF", type=["pdf"], accept_multiple_files=True
+    )
     pdf_files_names = [pdf_file.name for pdf_file in pdf_files]
     if st.button("Analyser"):
         if pdf_files is not None and len(pdf_files) == 2:
-            sample_texts = []
-            for pdf_file in pdf_files:
-                sample_text = scrape_content_pdf(pdf_file)
-                if sample_text:
-                    sample_texts.append(sample_text)
-                else:
-                    st.write("Failed to retrieve content from one of the PDF files.")
-                    break
-
-            if len(sample_texts) == 2:
+            sample_texts = [scrape_content_pdf(pdf_file) for pdf_file in pdf_files]
+            if all(sample_texts):
                 try:
                     col1, col2 = st.columns(2)
 
@@ -191,38 +172,41 @@ elif option == "Document PDF":
                                 result_count_proportions,
                             ) = find_subject_occurrences(sample_text, selected_subjects)
 
-                            # Calculate proportions for plotting
+                            # Display proportions
                             proportions_df = pd.DataFrame(
                                 result_count_proportions.items(),
                                 columns=["Thématiques", "Proportions"],
                             )
 
-                            # Plotting using Plotly Express
+                            # Plotting
                             fig = px.bar(
                                 proportions_df,
                                 x="Proportions",
                                 y="Thématiques",
                                 orientation="h",
-                                text=proportions_df["Proportions"].apply(
-                                    lambda x: f"{x * 100:.2f}%"
-                                ),
+                                text=proportions_df["Proportions"].apply(lambda x: f"{x:.2%}"),
                                 labels={
                                     "Proportions": "Proportions (%)",
                                     "Thématiques": "Thématiques",
                                 },
-                                # title=f"Proportion de thématiques dans le document PDF {idx + 1}",
-                                title=pdf_files_names[
-                                    idx
-                                ],  # f"Proportion de thématiques dans le document PDF '{pdf_files_names[idx]}'",
+                                title=pdf_files_names[idx].replace(
+                                    ".pdf", ""
+                                ),  # Remove '.pdf' from title
                                 color=proportions_df["Proportions"],
                                 color_continuous_scale=px.colors.qualitative.Safe,
-                                width=600,
+                                width=800,
                                 height=600,
                             )
 
-                            st.plotly_chart(fig)
+                            st.plotly_chart(
+                                fig, use_container_width=True
+                            )  # Set use_container_width to True
 
                 except ZeroDivisionError:
-                    st.write("Division by zero occurred during proportion calculation.")
+                    st.error(
+                        "Une division par zéro s'est produite lors du calcul de la proportion."
+                    )
+            else:
+                st.warning("Échec de récupération du contenu depuis l'un des fichiers PDF.")
         else:
-            st.write("Please upload exactly two PDF files.")
+            st.warning("Veuillez télécharger exactement deux fichiers PDF.")
