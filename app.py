@@ -17,6 +17,42 @@ st.set_page_config(
     page_icon="https://thumb.ac-illust.com/41/4137d1a06f24fba4ad746d7672551894_t.jpeg",
 )
 
+# Updated selected_subjects
+selected_subjects = {
+    "plan politique": ["plan politique", "politique"],
+    "santé": ["bien-être", "médical", "santé", "soins médicaux"],
+    "emploi": ["recrutement", "marché du travail", "emploi"],
+    "agriculture": ["cultures vivirières", "agriculture"],
+    "numérique": ["technologique", "informatique", "numérique"],
+    "sécurité": ["protection", "défense", "sécurité"],
+    "émigration": ["migrations", "diaspora", "émigration"],
+    "justice": ["légal", "tribunal", "justice"],
+    "démocratie et liberté": [
+        "participation",
+        "élections",
+        "démocratie",
+        "liberté d'expréssion",
+        "liberté",
+    ],
+    "technologie innovation": ["innovation", "recherche scientifique", "technologie"],
+    "industrialisation": ["manufacture", "production", "industrialisation"],
+    "jeunesse": ["adolescence", "enfance" "jeunesse", "jeunes"],
+    "formation professionnelle": ["formation", "formation professionnelle"],
+    "éducation": ["scolarité", "apprentissage", "éducation"],
+    "économie et croissance": [
+        "finances",
+        "marché",
+        "économie",
+        "financement",
+        "croissance économique",
+        "prospérité",
+    ],
+    "énergie": ["puissance", "énergies renouvelables", "énergie renouvelable", "énergie"],
+    "environnement": ["écologie", "nature", "environnement"],
+    "décentralisation": ["localisation", "territorial", "décentralisation"],
+    "rural": ["village", "agricole", "rural"],
+}
+
 
 # Function to scrape content from URL
 def scrape_content_url(url):
@@ -49,16 +85,17 @@ def scrape_content_pdf(pdf_file):
         return None
 
 
-# Function to find subject occurrences in text
+# Updated function to find subject occurrences in text
 def find_subject_occurrences(text, selected_subjects):
-    subjects = selected_subjects
-    occurrences = {subject: set() for subject in subjects}
-    subject_count = {subject: 0 for subject in subjects}
+    occurrences = {subject: set() for subject in selected_subjects.keys()}
+    subject_count = {subject: 0 for subject in selected_subjects.keys()}
 
     sentences = sent_tokenize(text)
 
-    for subject in subjects:
-        pattern = re.compile(r"\b" + re.escape(subject) + r"\b", re.IGNORECASE)
+    for subject, synonyms in selected_subjects.items():
+        pattern = re.compile(
+            r"\b(?:{})\b".format("|".join(map(re.escape, synonyms))), re.IGNORECASE
+        )
         for sentence in sentences:
             if re.search(pattern, sentence):
                 occurrences[subject].add(sentence)
@@ -81,33 +118,18 @@ st.write("Analyse thématique des propositions des candidats aux élections pré
 
 option = st.sidebar.radio("Choisir une source de données:", ("Article web : URL", "Document PDF"))
 
-selected_subjects = [
-    "plan politique",
-    "santé",
-    "emploi",
-    "agriculture",
-    "numérique",
-    "sécurité",
-    "émigration",
-    "justice",
-    "démocratie",
-    "technologie",
-    "industrialisation",
-    "jeunesse",
-    "formation professionnelle",
-    "éducation",
-    "économie",
-    "énergie",
-    "environnement",
-    "développement durable",
-    "décentralisation",
-    "développement local",
-    "développement humain",
-    "développement économique",
-    "développement social",
-    "rural",
-]
-selected_subjects = st.multiselect("Selectionner une ou plusieurs thématiques", selected_subjects)
+selected_subjects_list = list(selected_subjects.keys())
+# Adding the "Select all" checkbox
+
+all_subjects_checkbox = st.checkbox("Sélectionner toutes les thématiques")
+
+# Updated selection of subjects
+if all_subjects_checkbox:
+    selected_subjects_multiselect = selected_subjects_list
+else:
+    selected_subjects_multiselect = st.multiselect(
+        "Selectionner une ou plusieurs thématiques", selected_subjects_list
+    )
 
 if option == "Article web : URL":
     url = st.text_input("Enter URL:")
@@ -116,7 +138,11 @@ if option == "Article web : URL":
         if sample_text:
             try:
                 result_occurrences, result_count_proportions = find_subject_occurrences(
-                    sample_text, selected_subjects
+                    sample_text,
+                    {
+                        subject: selected_subjects[subject]
+                        for subject in selected_subjects_multiselect
+                    },
                 )
 
                 # Display occurrences
@@ -170,7 +196,13 @@ elif option == "Document PDF":
                             (
                                 result_occurrences,
                                 result_count_proportions,
-                            ) = find_subject_occurrences(sample_text, selected_subjects)
+                            ) = find_subject_occurrences(
+                                sample_text,
+                                {
+                                    subject: selected_subjects[subject]
+                                    for subject in selected_subjects_multiselect
+                                },
+                            )
 
                             # Display proportions
                             proportions_df = pd.DataFrame(
