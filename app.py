@@ -18,39 +18,21 @@ st.set_page_config(
 )
 
 # Updated selected_subjects
+ 
 selected_subjects = {
-    "plan politique": ["plan politique", "politique"],
-    "santé": ["bien-être", "médical", "santé", "soins médicaux"],
-    "emploi": ["recrutement", "marché du travail", "emploi"],
-    "agriculture": ["cultures vivirières", "agriculture"],
-    "numérique": ["technologique", "informatique", "numérique"],
-    "sécurité": ["protection", "défense", "sécurité"],
-    "émigration": ["migrations", "diaspora", "émigration"],
-    "justice": ["légal", "tribunal", "justice"],
-    "démocratie et liberté": [
-        "participation",
-        "élections",
-        "démocratie",
-        "liberté d'expréssion",
-        "liberté",
-    ],
-    "technologie innovation": ["innovation", "recherche scientifique", "technologie"],
-    "industrialisation": ["manufacture", "production", "industrialisation"],
-    "jeunesse": ["adolescence", "enfance" "jeunesse", "jeunes"],
-    "formation professionnelle": ["formation", "formation professionnelle"],
-    "éducation": ["scolarité", "apprentissage", "éducation"],
-    "économie et croissance": [
-        "finances",
-        "marché",
-        "économie",
-        "financement",
-        "croissance économique",
-        "prospérité",
-    ],
-    "énergie": ["puissance", "énergies renouvelables", "énergie renouvelable", "énergie"],
-    "environnement": ["écologie", "nature", "environnement"],
-    "décentralisation": ["localisation", "territorial", "décentralisation"],
-    "rural": ["village", "agricole", "rural"],
+    "Economie": ["économie", "finances", "marché", "croissance"],
+    "Finance": ["finance", "investissement", "banque", "budget"],
+    "Gaz": ["gaz naturel", "énergie fossile", "exploitation gazière", "gazoduc"],
+    "Éducation": ["éducation", "scolarité", "apprentissage", "formation"],
+    "Agriculture": ["agriculture", "cultures", "agroalimentaire", "cultivateurs"],
+    "Industrialisation": ["industrialisation", "manufacture", "production", "usine"],
+    "Pêche": ["pêche", "pisciculture", "aquaculture", "maritime"],
+    "Emploi": ["emploi", "travail", "marché du travail", "chômage"],
+    "Gouvernance": ["gouvernance", "administration", "politique", "leadership"],
+    "Transparence": ["transparence", "responsabilité", "ouverture", "intégrité"],
+    "Justice": ["justice", "tribunal", "légal", "droits"],
+    "Sécurité": ["sécurité", "défense", "protection", "sûreté"],
+    "Numérique": ["numérique", "technologie", "informatique", "innovation"]
 }
 
 
