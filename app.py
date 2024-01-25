@@ -20,7 +20,7 @@ st.set_page_config(
 # Updated selected_subjects
  
 selected_subjects = {
-    "Economie": ["économie", "finances", "marché", "croissance"],
+    "Économie": ["économie", "finances", "marché", "croissance"],
     "Finance": ["finance", "investissement", "banque", "budget","finances"],
     "Gaz": ["gaz naturel", "énergie fossile", "exploitation gazière", "gazoduc"],
     "Éducation": ["éducation", "scolarité", "apprentissage", "formation"],
