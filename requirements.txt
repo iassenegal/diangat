@@ -8,4 +8,5 @@ click<8
 wordcloud
 justext
 plotly
+nltk
 PyPDF2
