@@ -314,14 +314,21 @@ if st.button("Analyser"):
             "Fichier": file_names,
             "Proportion": result_counts
         })
-        
+        title_map = {
+      'Numérique': "Proportion du numérique dans chaque programme",
+      'Économie': "Proportion de l'économie dans chaque programme",
+      'Agriculture': "Proportion de l'agriculture dans chaque programme",
+      # Ajoutez d'autres mappages de titres pour les thématiques restantes si nécessaire
+  }
+        # Utilisez `selected_subject` pour déterminer le titre spécifique
+        specific_title = title_map.get(selected_subject, f"Proportion de '{selected_subject}' dans chaque programme")
         fig = px.bar(
             proportions_df,
             x="Fichier",
             y="Proportion",
             text=proportions_df["Proportion"].apply(lambda x: f"{x:.2%}"),
             labels={"Proportion": "Proportion de la thématique", "Fichier": "Fichier PDF"},
-            title=f"Proportion de '{selected_subject}' dans chaque programme",
+            title=specific_title,
             color="Proportion",
             color_continuous_scale=px.colors.qualitative.Safe,
         )
