@@ -307,7 +307,7 @@ if st.button("Analyser"):
                 )
                 proportion = occurrences / total_sentences if total_sentences else 0
                 result_counts.append(proportion)
-                file_names.append(pdf_file.name)
+                file_names.append(pdf_file.name.replace(".pdf", ""))
                 
         # Visualization
         proportions_df = pd.DataFrame({
