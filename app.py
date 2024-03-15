@@ -295,7 +295,7 @@ selected_subject = st.selectbox("Sélectionner une thématique", list(selected_s
 pdf_files = st.file_uploader("Charger jusqu'à cinq fichiers PDF", type=["pdf"], accept_multiple_files=True)
 
 if st.button("Analyser"):
-    if pdf_files and len(pdf_files) <= 5:
+    if pdf_files and len(pdf_files) <= 10:
         result_counts = []
         file_names = []
         
