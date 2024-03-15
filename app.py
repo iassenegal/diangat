@@ -265,7 +265,7 @@ def scrape_content_pdf(pdf_file):
         total_pages = len(pdf_reader.pages)
         extracted_text = [pdf_reader.pages[i].extract_text() for i in range(total_pages)]
         content_text = " ".join(extracted_text)
-        st.info(f"Nombre de pages dans le document '{pdf_file.name.replace('.pdf', '')}': {total_pages}")
+        ###st.info(f"Nombre de pages dans le document '{pdf_file.name.replace('.pdf', '')}': {total_pages}")
         return content_text
     except Exception as e:
         st.error(f"Error extracting text from PDF: {str(e)}")
@@ -321,7 +321,7 @@ if st.button("Analyser"):
             y="Proportion",
             text=proportions_df["Proportion"].apply(lambda x: f"{x:.2%}"),
             labels={"Proportion": "Proportion de la thématique", "Fichier": "Fichier PDF"},
-            title=f"Proportion de '{selected_subject}' dans chaque document",
+            title=f"Proportion de '{selected_subject}' dans chaque programme",
             color="Proportion",
             color_continuous_scale=px.colors.qualitative.Safe,
         )
