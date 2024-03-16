@@ -311,7 +311,7 @@ if st.button("Analyser"):
                 
         # Visualization
         proportions_df = pd.DataFrame({
-            "Fichier": file_names,
+            "Candidats": file_names,
             "Proportion": result_counts
         })
         title_map = {
@@ -324,7 +324,7 @@ if st.button("Analyser"):
         specific_title = title_map.get(selected_subject, f"Proportion de '{selected_subject}' dans chaque programme")
         fig = px.bar(
             proportions_df,
-            x="",
+            x="Candidats",
             y="Proportion",
             text=proportions_df["Proportion"].apply(lambda x: f"{x:.2%}"),
             ##labels={"Proportion": "Proportion de la thématique", "Fichier": ""},
