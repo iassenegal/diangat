@@ -8,8 +8,8 @@ import re
 from nltk.tokenize import sent_tokenize
 
 # Assuming nltk has been previously downloaded and set up
-# nltk.download("punkt")
-# nltk.download("wordnet")
+nltk.download("punkt")
+nltk.download("wordnet")
 
 # Define the subjects of interest with their synonyms
 selected_subjects = selected_subjects = {'Économie': ['économie',
