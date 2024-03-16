@@ -6,7 +6,7 @@ import requests
 import justext
 import re
 from nltk.tokenize import sent_tokenize
-
+import nltk
 # Assuming nltk has been previously downloaded and set up
 nltk.download("punkt")
 nltk.download("wordnet")
