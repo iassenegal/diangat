@@ -327,7 +327,7 @@ if st.button("Analyser"):
             x="Fichier",
             y="Proportion",
             text=proportions_df["Proportion"].apply(lambda x: f"{x:.2%}"),
-            labels={"Proportion": "Proportion de la thématique", "Fichier": "Fichier PDF"},
+            ##labels={"Proportion": "Proportion de la thématique", "Fichier": ""},
             title=specific_title,
             color="Proportion",
             color_continuous_scale=px.colors.qualitative.Safe,
