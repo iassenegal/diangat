@@ -318,6 +318,7 @@ if st.button("Analyser"):
       'Numérique': "Poids du numérique dans chaque programme",
       'Économie': "Poids de l'économie dans chaque programme",
       'Agriculture': "Poids de l'agriculture dans chaque programme",
+      'Éducation': "Poids de l'éducation dans chaque programme",
       # Ajoutez d'autres mappages de titres pour les thématiques restantes si nécessaire
   }
         # Utilisez `selected_subject` pour déterminer le titre spécifique
