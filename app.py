@@ -319,6 +319,10 @@ if st.button("Analyser"):
       'Économie': "Poids de l'économie dans chaque programme",
       'Agriculture': "Poids de l'agriculture dans chaque programme",
       'Éducation': "Poids de l'éducation dans chaque programme",
+      'Industrialisation': "Poids de l'Industrialisation dans chaque programme",
+      'Justice': "Poids de la juste dans chaque programme",
+      'Santé': "Poids de la santé dans chaque programme",
+      'Infrastructure': "Poids des Infrastructures dans chaque programme",
       # Ajoutez d'autres mappages de titres pour les thématiques restantes si nécessaire
   }
         # Utilisez `selected_subject` pour déterminer le titre spécifique
